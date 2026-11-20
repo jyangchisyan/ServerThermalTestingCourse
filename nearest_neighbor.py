@@ -1,5 +1,7 @@
 """只使用 Python 標準函式庫實作簡化的 1-NN 分類器。"""
 
+from math import isclose
+
 CPU_SCALE = 100
 TEMPERATURE_RATE_SCALE = 30
 FAN_CHANGE_SCALE = 1200
@@ -44,3 +46,26 @@ def predict_1nn(test_features, training_samples):
             nearest_label = known_label
 
     return nearest_label, nearest_distance
+
+
+def predict_1nn_with_ties(test_features, training_samples):
+    """最近樣本標籤衝突時回傳 None，否則回傳一致的標籤。"""
+    if not training_samples:
+        raise ValueError("訓練樣本不能是空的")
+
+    distances = []
+    for features, label in training_samples:
+        distance = manhattan_distance(test_features, features)
+        distances.append((distance, label))
+
+    nearest_distance = min(distance for distance, label in distances)
+    nearest_labels = set()
+
+    for distance, label in distances:
+        if isclose(distance, nearest_distance, rel_tol=1e-9, abs_tol=1e-12):
+            nearest_labels.add(label)
+
+    if len(nearest_labels) > 1:
+        return None, nearest_distance
+
+    return nearest_labels.pop(), nearest_distance
